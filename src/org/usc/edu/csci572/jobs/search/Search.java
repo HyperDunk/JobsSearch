@@ -6,12 +6,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashSet;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 public class Search {
 
 	HashSet<String> regionMap = null;
+	HashSet<String> citiesMap = null;
 	/**
 	 * @param args
 	 */
@@ -28,6 +30,7 @@ public class Search {
 	
 	public void init() {
 		regionMap = new HashSet<String>();
+		citiesMap = new HashSet<String>();
 	}
 	
 	public void performQueries() {
@@ -35,18 +38,36 @@ public class Search {
 	}
 	
 	public void mapLocations() throws Exception{
-		URL u = new URL("http://localhost:8983/solr/collection1/select?q=location2%3A*&rows=100&fl=location2&wt=json&indent=true");
+		URL u = new URL("http://localhost:8983/solr/collection1/select?q=*.*&rows=264486&fl=location2&wt=json&indent=true");
         HttpURLConnection c = (HttpURLConnection) u.openConnection();
         c.setRequestMethod("GET"); 
         c.connect();
         int status = c.getResponseCode();
-        System.out.println(status);
+       // System.out.println(status);
         if(status == 200 || status == 201) {
         	InputStream is = c.getInputStream();
         	JSONParser jsonParser = new JSONParser();
         	InputStreamReader isr = new InputStreamReader(is);
         	JSONObject resJson = (JSONObject) jsonParser.parse(isr);
-        	System.out.println(resJson);
+        	//System.out.println("\n"+resJson);
+        	
+        	JSONObject resValueJSON = (JSONObject) resJson.get("response");
+        	JSONArray docsJSON = (JSONArray) resValueJSON.get("docs");
+        	//System.out.println(docsJSON);
+        	for(int i=0; i<docsJSON.size(); i++) {
+        		JSONObject locJSON = (JSONObject) docsJSON.get(i);
+        		String ch[] = locJSON.get("location2").toString().split(",");
+        		//System.out.println("tokens:"+ch[ch.length-1]);
+        		//System.out.println("tokens:"+ch[0]);
+
+        		regionMap.add(ch[ch.length-1].toLowerCase());
+        		if(ch.length > 1) {
+        			citiesMap.add(ch[ch.length-2]);
+        		}
+        		
+        	}
+        	System.out.println(regionMap);
+        	System.out.println(citiesMap);
         }
 	}
 	
